@@ -1,0 +1,302 @@
+---------------------------------------------------------------------
+                    README file for Audio::Tools.
+            3/1/99 - Nick Peskett - nick@soup.demon.co.uk
+---------------------------------------------------------------------
+
+These tools are required for the follwing modules;
+Audio::Wav
+Audio::Mix
+Audio::CoolEdit
+
+---------------------------------------------------------------------
+                                NOTES
+---------------------------------------------------------------------
+
+These modules are common tools used by my other Audio::XXX
+applications.
+I have seperated the module Audio::ByteOrder because I developed these
+packages on a Win32 machine & I was worried about unpacking types on a
+big endian processor. I have only tested the Audio::XXX modules on
+Win32 so far.
+
+---------------------------------------------------------------------
+                             INSTALLATION
+---------------------------------------------------------------------
+
+Same as for any CPAN module;
+
+tar zxvf Audio-Tools-0.01.tar.gz
+cd Audio-Tools-0.01
+perl Makefile.PL
+make test
+make install
+
+You'll need to install this module before any of the other related
+Audio::XXX modules I've written
+
+---------------------------------------------------------------------
+                            DOCUMENTATION
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+                             Audio::Tools
+      Common Tools for Audio::Wav, Audio::Mix & Audio::CoolEdit
+---------------------------------------------------------------------
+
+DESCRIPTION
+    The modules in this package are ByteOrder, Time & Fades.
+
+    They are all independent and the only use, so far, for
+    Audio::Tools is a place to hold the documentation.
+
+    ByteOrder is currently the unpacking rules for little endian
+    machines, I've seperated this from the other modules for ease of
+    porting to big endian machines.
+
+    Fades is a collection of algorithms for fading in/ out audio
+    files.
+
+    Time is a collection of tools for conversion between time,
+    samples & bytes among other things.
+
+
+---------------------------------------------------------------------
+                       Audio::Tools::ByteOrder
+             Unpacking rules for little endian machines.
+---------------------------------------------------------------------
+
+SYNOPSIS
+            use Audio::Tools::ByteOrder;
+            my $pack_order = new Audio::Tools::ByteOrder;
+            my $pack_type = $pack_order -> pack_type(),
+            my $pack_length = $pack_order -> pack_length(),
+
+DESCRIPTION
+    This is currently the unpacking rules for little endian
+    machines,
+
+METHODS
+  new
+
+    Returns a blessed Audio::Tools::ByteOrder object.
+
+            my $pack_order = new Audio::Tools::ByteOrder;
+
+  pack_type
+
+    Returns a reference to a hash containing the pack types for
+    various data formats.
+
+            my $pack_type = $pack_order -> pack_type(),
+
+  pack_length
+
+    Returns a reference to a hash containing the packed lengths for
+    various data formats.
+
+            my $pack_length = $pack_order -> pack_length(),
+
+
+---------------------------------------------------------------------
+                         Audio::Tools::Fades
+                     Fading in & out algorithms.
+---------------------------------------------------------------------
+
+DESCRIPTION
+    Fades is a collection of algorithms for fading in/ out audio
+    files.
+
+SYNOPSIS
+            use Audio::Tools::Fades;
+
+            my $up_to = 5;
+            my @names = qw( in out );
+            my $volume = 1;
+
+            my $fades = new Audio::Tools::Fades;
+
+            foreach my $type ( qw( linear exp invexp trig invtrig ) )
+            {
+                    for my $direction ( 0, 1 ) {
+                            my $fade = $fades -> fade( $up_to,
+                            $direction, $type );
+                            print "fade $names[$direction] type:
+                            $type;\n\t";
+                            for my $sample ( 0 .. $up_to ) {
+                                    printf ' %2d->%2.2f', $sample,
+                                    &$fade( $sample, $volume );
+                            }
+                            print "\n";
+                    }
+            }
+
+METHODS
+  new
+
+    Returns a blessed Audio::Tools::Fades object.
+
+            my $fades = new Audio::Tools::Fades;
+
+  fade
+
+    Returns a reference to a subroutine that is initialised to the
+    length of samples the fade is to last for. The subroutine
+    returned takes the current sample offset & the current sample
+    value as parameters. In the example I have used sample value 1
+    so you can see the effect of the fade.
+
+            my $fade = $fades -> fade( $length, $direction, $type );
+            for my $sample ( 0 .. $length ) {
+                    printf ' %2d->%2.2f', $sample, &$fade( $sample, 1
+                    );
+            }
+            print "\n";
+
+    Where;
+
+            $length         = length of fade
+            $direction      = 0 for in, 1 for out
+            $type is one of;
+                    linear  = smooth gradient
+                    exp     = exponential (gets loud quickly)
+                    invexp  = inverse exponential (gets loud slowly)
+                    trig    = trigonomic, roughly in between linear &
+                    exp
+                    invtrig = inverse trigonomic
+
+
+---------------------------------------------------------------------
+                          Audio::Tools::Time
+                time / sample / byte conversion tools.
+---------------------------------------------------------------------
+
+DESCRIPTION
+    Tools for converting bytes into samples, samples into time etc.
+
+SYNOPSIS
+            my $time = new Audio::Tools::Time 44100, 16, 2;
+            my $bytes = $time -> nice_bytes( 11025 );
+            my $sample = $time -> bytes_to_samples( $bytes );
+            my $secs = $time -> samples_to_seconds( $sample );
+            my( $mins, $secs, $fract_secs )
+                    = $time -> split_time( $secs );
+            my $dao_time = $time -> dao_time( $secs );
+
+AUTHOR
+    Nick Peskett - nick@soup.demon.co.uk
+
+SEE ALSO
+    the Audio::Wav manpage
+
+    the Audio::Mix manpage
+
+    the Audio::CoolEdit manpage
+
+METHODS
+  new
+
+    Returns a blessed Audio::Tools::Time object.
+
+            my $time = new Audio::Tools::Time sample_rate,
+            bits_per_sample, channels;
+
+    Where;
+
+            sample_rate     = number of samples per second (44100 is
+            cd quality)
+            bits_per_sample = number of bits per samples (16 is cd
+            quality)
+            channels        = number of channels of sound (stereo is
+            2)
+
+  samples_to_bytes
+
+    Converts a sample offset to it's byte offset.
+
+            my $bytes = $time -> samples_to_bytes( $sample );
+
+  bytes_to_samples
+
+    Converts a byte offset to it's sample offset.
+
+            my $sample = $time -> bytes_to_samples( $bytes );
+
+  samples_to_seconds
+
+    Converts a sample offset to it's position as floating point
+    seconds.
+
+            my $secs = $time -> samples_to_seconds( $sample );
+
+  bytes_to_seconds
+
+    Converts a byte offset to it's position as floating point
+    seconds.
+
+            my $secs = $time -> bytes_to_seconds( $samples );
+
+  seconds_to_samples
+
+    Converts a position in seconds (can be floating point) to it's
+    sample offset.
+
+            my $sample = $time -> seconds_to_samples( $secs );
+
+  seconds_to_bytes
+
+    Converts a position in seconds (can be floating point) to it's
+    byte offset.
+
+            my $sample = $time -> seconds_to_bytes( $secs );
+
+  nice_bytes
+
+    Rounds down a byte offset to a appropriate byte offset for the
+    current settings.
+
+            $bytes = $time -> nice_bytes( $bytes );
+
+  split_time
+
+    Converts a floating point seconds position to minutes, seconds &
+    fractional seconds.
+
+            my( $mins, $secs, $fract_secs )
+                    = $time -> split_time( $secs );
+
+  dao_time
+
+    Converts a floating point seconds position to a string
+    containing the format used by disk-at-once & CDRWin. (the
+    section on "/www.goldenhawk.com" in the http: manpage)
+
+            my $dao_time = $time -> dao_time( $secs );
+
+  nice_time
+
+    Converts a floating point seconds position into a string that
+    verbosely describes the time. If $terse is true then the output
+    will only show the most significant value (to one decimal place
+    if hour or minute).
+
+            print $time -> nice_time( 90 );
+            # returns "1 min, 30 secs"
+            print $time -> nice_time( 90, 1 );
+            # returns "1.5 mins"
+
+  dao_cue_file
+
+    Writes a cue file in the format used by disk-at-once & CDRWin.
+    (the section on "/www.goldenhawk.com" in the http: manpage)
+
+            $time -> dao_cue_file( $breaks, './audio.wav',
+            './output.cue' );
+
+    Where $breaks is a reference to an array of byte offsets.
+
+  block_align
+
+    Returns the current block alignment, ie 44.1khz 16 bit stereo: 1
+    sample = 4 bytes
+
+            my block_align = $time -> block_align();
